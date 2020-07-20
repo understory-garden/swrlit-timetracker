@@ -9,7 +9,9 @@
   },
   "dependencies": {
     "next": "9.4.4",
-    "react": "16.13.1",
-    "react-dom": "16.13.1"
+    "rdf-namespaces": "^1.8.0",
+    "react": "^16.13.1",
+    "react-dom": "16.13.1",
+    "swrlit": "0.0.2"
   }
 }
