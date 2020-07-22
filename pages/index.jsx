@@ -1,8 +1,9 @@
+import { useState } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
 import { useThing, useWebId } from "swrlit"
 import {
-  getUrlAll, getUrlOne, getStringNoLocaleOne
+  getUrlOne, getStringNoLocaleOne, setStringNoLocale
 } from '@itme/lit-pod'
 import { vcard, foaf } from 'rdf-namespaces'
 
@@ -25,12 +26,20 @@ export function AuthButton() {
 }
 
 function Profile({ webId }) {
-  const { thing: profile } = useThing(webId)
+  const { thing: profile, save: saveProfile } = useThing(webId)
   const profileImage = profile && getUrlOne(profile, vcard.hasPhoto)
   const name = profile && getStringNoLocaleOne(profile, foaf.name)
+  const [newName, setNewName] = useState("")
+  const saveNewName = () => {
+    saveProfile(setStringNoLocale(profile, foaf.name, newName))
+  }
   return (
     <div>
       <h1>{name}</h1>
+      <p>
+        <input type="text" onChange={e => setNewName(e.target.value)} />
+        <button onClick={saveNewName}>save new name</button>
+      </p>
       <img src={profileImage} alt={name} />
     </div>
   )
