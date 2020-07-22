@@ -1,7 +1,7 @@
 import { useRouter } from 'next/router'
-import { useProfile } from "swrlit"
-import { getStringNoLocaleOne } from '@itme/lit-pod'
-import { foaf } from 'rdf-namespaces'
+import { useThing } from "swrlit"
+import { getStringNoLocaleOne, getUrlOne } from '@itme/lit-pod'
+import { foaf, vcard } from 'rdf-namespaces'
 
 function handleToWebId(handle) {
   try {
@@ -17,12 +17,14 @@ export default function Handle() {
   const router = useRouter()
   const { handle } = router.query
   const webId = handleToWebId(handle)
-  const { profile } = useProfile(webId)
+  const { thing: profile, ...rest } = useThing(webId)
+  const profileImage = profile && getUrlOne(profile, vcard.hasPhoto)
   const name = profile && getStringNoLocaleOne(profile, foaf.name)
 
   return (
     <div>
-      hello, {name}
+      <h1>{name}</h1>
+      <img src={profileImage} alt={name} />
     </div>
   )
 }

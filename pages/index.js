@@ -1,9 +1,28 @@
 import Head from 'next/head'
-import { useThing } from "swrlit"
+import Link from 'next/link'
+import { useThing, useWebId } from "swrlit"
 import {
   getUrlAll, getUrlOne, getStringNoLocaleOne
 } from '@itme/lit-pod'
 import { vcard, foaf } from 'rdf-namespaces'
+
+import auth from "solid-auth-client"
+
+
+export function AuthButton() {
+  const webId = useWebId()
+  if (webId === undefined) {
+    return <div>loading...</div>
+  } else if (webId === null) {
+    return (
+      <button onClick={() => auth.popupLogin({ popupUri: "/popup.html" })}>
+        Log In
+      </button>
+    )
+  } else {
+    return <button onClick={() => auth.logout()}>Log Out</button>
+  }
+}
 
 function Profile({ webId }) {
   const { thing: profile } = useThing(webId)
@@ -18,6 +37,7 @@ function Profile({ webId }) {
 }
 
 export default function Home() {
+  const myWebId = useWebId()
   return (
     <div className="container">
       <Head>
@@ -26,7 +46,11 @@ export default function Home() {
       </Head>
 
       <main>
-        <Profile webId="https://tobytoberson.inrupt.net/profile/card#me" />
+        <AuthButton />
+        {myWebId && <Profile webId={myWebId} />}
+        <Link href="/profile/[handle]" as={`/profile/tobytoberson.inrupt.net`}>
+          Toby
+    </Link>
       </main>
 
       <footer>
