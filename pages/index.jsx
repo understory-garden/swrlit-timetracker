@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
-import { useThing, useWebId } from "swrlit"
+import { useMyProfile, useWebId } from "swrlit"
 import {
   getUrlOne, getStringNoLocaleOne, setStringNoLocale
 } from '@itme/lit-pod'
@@ -25,8 +25,8 @@ export function AuthButton() {
   }
 }
 
-function Profile({ webId }) {
-  const { thing: profile, save: saveProfile } = useThing(webId)
+function MyProfile() {
+  const { profile, save: saveProfile } = useMyProfile()
   const profileImage = profile && getUrlOne(profile, vcard.hasPhoto)
   const name = profile && getStringNoLocaleOne(profile, foaf.name)
   const [newName, setNewName] = useState("")
@@ -46,7 +46,6 @@ function Profile({ webId }) {
 }
 
 export default function Home() {
-  const myWebId = useWebId()
   return (
     <div className="container">
       <Head>
@@ -56,7 +55,7 @@ export default function Home() {
 
       <main>
         <AuthButton />
-        {myWebId && <Profile webId={myWebId} />}
+        <MyProfile />
         <Link href="/profile/[handle]" as={`/profile/tobytoberson.inrupt.net`}>
           Toby
     </Link>
