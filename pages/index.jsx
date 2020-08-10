@@ -3,8 +3,8 @@ import Head from 'next/head'
 import Link from 'next/link'
 import { useMyProfile, useWebId } from "swrlit"
 import {
-  getUrlOne, getStringNoLocaleOne, setStringNoLocale
-} from '@itme/lit-pod'
+  getUrl, getStringNoLocale, setStringNoLocale
+} from '@itme/solid-client'
 import { vcard, foaf } from 'rdf-namespaces'
 
 import auth from "solid-auth-client"
@@ -27,15 +27,15 @@ export function AuthButton() {
 
 function MyProfile() {
   const { profile, save: saveProfile } = useMyProfile()
-  const profileImage = profile && getUrlOne(profile, vcard.hasPhoto)
-  const name = profile && getStringNoLocaleOne(profile, foaf.name)
+  const profileImage = profile && getUrl(profile, vcard.hasPhoto)
+  const name = profile && getStringNoLocale(profile, foaf.name)
   const [newName, setNewName] = useState("")
   const saveNewName = () => {
     saveProfile(setStringNoLocale(profile, foaf.name, newName))
   }
   return (
     <div>
-      <h1>{name}</h1>
+      <h1>hi, {name}</h1>
       <p>
         <input type="text" onChange={e => setNewName(e.target.value)} />
         <button onClick={saveNewName}>save new name</button>
@@ -57,8 +57,10 @@ export default function Home() {
         <AuthButton />
         <MyProfile />
         <Link href="/profile/[handle]" as={`/profile/tobytoberson.inrupt.net`}>
-          Toby
-    </Link>
+          <a>
+            Toby
+          </a>
+        </Link>
       </main>
 
       <footer>
@@ -193,7 +195,7 @@ export default function Home() {
             flex-direction: column;
           }
         }
-      `}</style>
+        `}</style>
 
       <style jsx global>{`
         html,
@@ -208,7 +210,7 @@ export default function Home() {
         * {
           box-sizing: border-box;
         }
-      `}</style>
+        `}</style>
     </div>
   )
 }

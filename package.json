@@ -12,6 +12,7 @@
     "rdf-namespaces": "^1.8.0",
     "react": "^16.13.1",
     "react-dom": "16.13.1",
-    "swrlit": "0.0.3"
+    "@itme/solid-client": "0.1.0-1",
+    "swrlit": "0.0.6"
   }
 }
