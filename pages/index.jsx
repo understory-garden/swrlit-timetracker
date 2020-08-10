@@ -17,11 +17,11 @@ export function AuthButton() {
   } else if (webId === null) {
     return (
       <button onClick={() => auth.popupLogin({ popupUri: "/popup.html" })}>
-        Log In
+        log in
       </button>
     )
   } else {
-    return <button onClick={() => auth.logout()}>Log Out</button>
+    return <button onClick={() => auth.logout()}>log out</button>
   }
 }
 
@@ -53,7 +53,7 @@ function MyProfile() {
   return profile ? (
     <div>
       <img className="h-48 my-6" src={profileImage} alt={name} />
-      <div className="flex flex-row">
+      <div className="flex flex-col">
         <h1 className="text-xl mr-6">hi, {name}</h1>
         <p>
           <input type="text" onChange={e => setNewName(e.target.value)} />
