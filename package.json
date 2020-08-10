@@ -15,7 +15,7 @@
     "rdf-namespaces": "^1.8.0",
     "react": "^16.13.1",
     "react-dom": "16.13.1",
-    "swrlit": "0.0.7",
+    "swrlit": "0.0.8",
     "tailwindcss": "^1.6.2"
   }
 }

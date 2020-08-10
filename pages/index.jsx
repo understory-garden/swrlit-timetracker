@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
-import { useMyProfile, useWebId } from "swrlit"
+import { useMyProfile, useProfile, useWebId } from "swrlit"
 import {
-  getUrl, getStringNoLocale, setStringNoLocale
+  getUrl, getUrlAll, getStringNoLocale, setStringNoLocale
 } from '@itme/solid-client'
 import { vcard, foaf } from 'rdf-namespaces'
 
@@ -29,10 +29,23 @@ const Loader = () => (
   <div className="animate-spin w-6 h-6">me</div>
 )
 
+function Friend({ webId }) {
+  const { profile } = useProfile(webId)
+  const name = profile && getStringNoLocale(profile, foaf.name)
+  return (
+    <Link href="/profile/[handle]" as={`/profile/${encodeURIComponent(webId)}`}>
+      <a>
+        {name || ''}
+      </a>
+    </Link>
+  )
+}
+
 function MyProfile() {
   const { profile, save: saveProfile } = useMyProfile()
   const profileImage = profile && getUrl(profile, vcard.hasPhoto)
   const name = profile && getStringNoLocale(profile, foaf.name)
+  const knows = profile && getUrlAll(profile, foaf.knows)
   const [newName, setNewName] = useState("")
   const saveNewName = () => {
     saveProfile(setStringNoLocale(profile, foaf.name, newName))
@@ -46,6 +59,12 @@ function MyProfile() {
           <input type="text" onChange={e => setNewName(e.target.value)} />
           <button onClick={saveNewName}>save new name</button>
         </p>
+      </div>
+      <h1 className="text-xl mt-12">Friends</h1>
+      <div className="flex flex-col">
+        {knows && knows.map(url => (
+          <Friend webId={url} key={url} />
+        ))}
       </div>
     </div>
   ) : (
@@ -65,19 +84,9 @@ export default function Home() {
 
       <main className="m-6">
         {webId && (
-          <>
-            <MyProfile />
-            <h1 className="text-xl mt-12">Friends</h1>
-            <div className="flex flex-col">
-              <Link href="/profile/[handle]" as={`/profile/tobytoberson.inrupt.net`}>
-                <a>
-                  Toby
-                </a>
-              </Link>
-            </div>
-          </>
+          <MyProfile />
         )}
-        <nav>
+        <nav className="mt-12">
           <AuthButton />
         </nav>
       </main>
