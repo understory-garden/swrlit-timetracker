@@ -1,27 +1,25 @@
 import { useState } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
-import { useMyProfile, useProfile, useWebId } from "swrlit"
+import { useMyProfile, useProfile, useWebId, useAuthentication } from 'swrlit'
 import {
   getUrl, getUrlAll, getStringNoLocale, setStringNoLocale
 } from '@itme/solid-client'
-import { vcard, foaf } from 'rdf-namespaces'
-
-import auth from "solid-auth-client"
-
+import { VCARD, FOAF } from '@inrupt/vocab-common-rdf'
 
 export function AuthButton() {
+  const { popupLogin, logout } = useAuthentication()
   const webId = useWebId()
   if (webId === undefined) {
     return <div>loading...</div>
   } else if (webId === null) {
     return (
-      <button onClick={() => auth.popupLogin({ popupUri: "/popup.html" })}>
+      <button onClick={() => popupLogin({ popupUri: "/popup.html" })}>
         log in
       </button>
     )
   } else {
-    return <button onClick={() => auth.logout()}>log out</button>
+    return <button onClick={() => logout()}>log out</button>
   }
 }
 
@@ -31,7 +29,7 @@ const Loader = () => (
 
 function Friend({ webId }) {
   const { profile } = useProfile(webId)
-  const name = profile && getStringNoLocale(profile, foaf.name)
+  const name = profile && getStringNoLocale(profile, FOAF.name)
   return (
     <Link href="/profile/[handle]" as={`/profile/${encodeURIComponent(webId)}`}>
       <a>
@@ -43,12 +41,12 @@ function Friend({ webId }) {
 
 function MyProfile() {
   const { profile, save: saveProfile } = useMyProfile()
-  const profileImage = profile && getUrl(profile, vcard.hasPhoto)
-  const name = profile && getStringNoLocale(profile, foaf.name)
-  const knows = profile && getUrlAll(profile, foaf.knows)
+  const profileImage = profile && getUrl(profile, VCARD.hasPhoto)
+  const name = profile && getStringNoLocale(profile, FOAF.name)
+  const knows = profile && getUrlAll(profile, FOAF.knows)
   const [newName, setNewName] = useState("")
   const saveNewName = () => {
-    saveProfile(setStringNoLocale(profile, foaf.name, newName))
+    saveProfile(setStringNoLocale(profile, FOAF.name, newName))
   }
   return profile ? (
     <div>
