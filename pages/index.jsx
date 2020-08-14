@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
 import {
@@ -57,6 +57,21 @@ const TIMELOG = {
   entries: `${timelogNs}entries`
 }
 
+function formatDuration(start, end){
+  const seconds = end.diff(start, "seconds")
+  const hours = Math.floor(seconds / 3600)
+  const leftoverMinutes = Math.floor((seconds % 3600) / 60)
+  const leftoverSeconds = (seconds % 60)
+
+  return (
+    <>
+      {(hours > 0) && (<>{hours} hour{(hours > 1) && 's'}</>)}&nbsp;
+      {(leftoverMinutes > 0) && (<>{leftoverMinutes} minutes</>)}&nbsp;
+      {leftoverSeconds} seconds
+    </>
+  )
+}
+
 function Entry({ entryUri }){
   const { thing: entry, save } = useThing(entryUri)
   const description = getStringNoLocale(entry, RDFS.comment)
@@ -75,7 +90,7 @@ function Entry({ entryUri }){
         </div>
         {startMoment && endMoment && (
           <div className="mx-6">
-            {endMoment.diff(startMoment, 'minutes')} minutes
+            {formatDuration(startMoment, endMoment)}
           </div>
         )}
       </div>
@@ -91,13 +106,16 @@ function Timelog({ log }){
   const [description, setDescription] = useState("")
   const [start, setStart] = useState(moment())
   const [end, setEnd] = useState(moment())
+  const [timerStart, setTimerStart] = useState(moment())
+  const [timerEnd, setTimerEnd] = useState(moment())
+  const [timerRunning, setTimerRunning] = useState(false)
 
-  const createEntry = async () => {
+  const createEntry = async (startMoment, endMoment) => {
     var entry = createThing();
     entry = addUrl(entry, RDF.type, TIMELOG.Entry)
     entry = setStringNoLocale(entry, RDFS.comment, description)
-    entry = setDatetime(entry, schema.startTime, start.toDate())
-    entry = setDatetime(entry, schema.endTime, end.toDate())
+    entry = setDatetime(entry, schema.startTime, startMoment.toDate())
+    entry = setDatetime(entry, schema.endTime, endMoment.toDate())
 
     var newTimelog = addUrl(timelog, TIMELOG.entries, entry)
     var newResource = setThing(resource, newTimelog)
@@ -106,11 +124,31 @@ function Timelog({ log }){
     setDescription("")
   }
 
+  function toggleTimer(){
+    if (timerRunning){
+      setTimerRunning(false)
+      createEntry(timerStart, moment())
+    } else {
+      setTimerStart(moment())
+      setTimerRunning(true)
+    }
+  }
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTimerEnd(moment())
+    }, 1000)
+    return () => {
+      clearInterval(interval)
+    }
+  })
+
   return (
     <div>
-      <h1 className="text-xl mb-6">
-        <a href={url} target="_blank">{name}</a>
-      </h1>
+      <div className="flex">
+        <h1 className="text-xl mb-6">
+          <a href={url} target="_blank">{name}</a>
+        </h1>
+      </div>
       <div className="flex">
         <DateTimePicker
           onChange={setStart}
@@ -122,10 +160,17 @@ function Timelog({ log }){
           />
         <input type="text" value={description} onChange={e => setDescription(e.target.value)} placeholder="description"/>
 
-        <button className="btn btn-blue" onClick={() => createEntry()}>
-          Add Entry
+          <button className="btn btn-blue" onClick={() => createEntry(start, end)}>
+          add&nbsp;entry
         </button>
       </div>
+      <h3 className="bold">OR</h3>
+      <button onClick={toggleTimer}>
+        {timerRunning ? "stop" : "start"}
+      </button>
+      {timerRunning && (
+        <div>{formatDuration(timerStart, timerEnd)}</div>
+      )}
       {entries && entries.map(entry => <Entry key={entry} entryUri={entry}/>)}
     </div>
   )
