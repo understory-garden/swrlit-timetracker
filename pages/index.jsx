@@ -1,11 +1,20 @@
 import { useState } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
-import { useMyProfile, useProfile, useWebId, useAuthentication } from 'swrlit'
 import {
-  getUrl, getUrlAll, getStringNoLocale, setStringNoLocale
+  useWebId, useAuthentication,
+  useMyProfile, useProfile,
+  useEnsured, useContainer,
+  useThing
+} from 'swrlit'
+import {
+  createSolidDataset, saveSolidDatasetInContainer,
+  setThing, createThing, asUrl,
+  getUrl, getUrlAll, addUrl,
+  getStringNoLocale, setStringNoLocale
 } from '@itme/solid-client'
-import { VCARD, FOAF } from '@inrupt/vocab-common-rdf'
+import { VCARD, FOAF, RDF, RDFS } from '@inrupt/vocab-common-rdf'
+import { WS } from '@inrupt/vocab-solid-common'
 
 export function AuthButton() {
   const { popupLogin, logout } = useAuthentication()
@@ -24,45 +33,86 @@ export function AuthButton() {
 }
 
 const Loader = () => (
-  <div className="animate-spin w-6 h-6">me</div>
+  <div className="animate-spin w-6 h-6">⏰</div>
 )
 
-function Friend({ webId }) {
+export function useStorageContainer(webId) {
   const { profile } = useProfile(webId)
-  const name = profile && getStringNoLocale(profile, FOAF.name)
+  return profile && getUrl(profile, WS.storage)
+}
+
+export function useTimelogContainerUri(webId, path = 'public') {
+  const storageContainer = useStorageContainer(webId)
+  return useEnsured(storageContainer && `${storageContainer}${path}/timelogs/`)
+}
+
+const timelogNs = "https://itme.online/v/timelog#"
+const TIMELOG = {
+  Log: `${timelogNs}Log`,
+  Entry: `${timelogNs}Entry`,
+  entries: `${timelogNs}entries`
+}
+
+function Entry({ entryUri }){
+  const { thing: entry, save } = useThing(entryUri)
+  const description = getStringNoLocale(entry, RDFS.comment)
   return (
-    <Link href="/profile/[handle]" as={`/profile/${encodeURIComponent(webId)}`}>
-      <a>
-        {name || ''}
-      </a>
-    </Link>
+    <div>
+      {description}
+    </div>
   )
 }
 
-function MyProfile() {
-  const { profile, save: saveProfile } = useMyProfile()
-  const profileImage = profile && getUrl(profile, VCARD.hasPhoto)
-  const name = profile && getStringNoLocale(profile, FOAF.name)
-  const knows = profile && getUrlAll(profile, FOAF.knows)
-  const [newName, setNewName] = useState("")
-  const saveNewName = () => {
-    saveProfile(setStringNoLocale(profile, FOAF.name, newName))
+function Timelog({ log }){
+  const url = asUrl(log)
+  const { thing: timelog, save, resource, saveResource } = useThing(`${asUrl(log)}#log`)
+  const name = timelog && getStringNoLocale(timelog, RDFS.label)
+  const entries = timelog && getUrlAll(timelog, TIMELOG.entries)
+
+  const createEntry = async (description, start, end) => {
+    var entry = createThing();
+    entry = addUrl(entry, RDF.type, TIMELOG.Entry)
+    entry = setStringNoLocale(entry, RDFS.comment, description)
+
+    var newTimelog = addUrl(timelog, TIMELOG.entries, entry)
+    var newResource = setThing(resource, newTimelog)
+    newResource = setThing(newResource, entry)
+    await saveResource(newResource)
   }
-  return profile ? (
+
+  return (
+    <div key={url}>
+      <h1><a href={url} target="_blank">{name}</a></h1>
+      <button className="btn btn-blue" onClick={() => createEntry("I did some werk")}>
+        Add Entry
+      </button>
+      {entries && entries.map(entry => <Entry key={entry} entryUri={entry}/>)}
+    </div>
+  )
+}
+
+function TimeTrackers() {
+  const myWebId = useWebId()
+  const timelogContainerUri = useTimelogContainerUri(myWebId, 'private')
+  const { resources: timelogs, mutate: mutateTimelogs } = useContainer(timelogContainerUri)
+
+  const createTimelog = async ({ name = "Time Tracker"}) => {
+    var log = createThing({ name: 'log' });
+    log = addUrl(log, RDF.type, TIMELOG.Log)
+    log = setStringNoLocale(log, RDFS.label, name)
+
+    var dataset = createSolidDataset()
+    dataset = setThing(dataset, log)
+
+    await saveSolidDatasetInContainer(timelogContainerUri, dataset, { slugSuggestion: name })
+    mutateTimelogs()
+  }
+
+  return timelogs ? (
     <div>
-      <img className="h-48 my-6" src={profileImage} alt={name} />
-      <div className="flex flex-col">
-        <h1 className="text-xl mr-6">hi, {name}</h1>
-        <p>
-          <input type="text" onChange={e => setNewName(e.target.value)} />
-          <button onClick={saveNewName}>save new name</button>
-        </p>
-      </div>
-      <h1 className="text-xl mt-12">Friends</h1>
-      <div className="flex flex-col">
-        {knows && knows.map(url => (
-          <Friend webId={url} key={url} />
-        ))}
+      <button className="btn btn-blue" onClick={createTimelog}>Create New Tracker</button>
+      <div className="flex">
+        {timelogs && timelogs.map(log => <Timelog key={asUrl(log)} log={log}/>)}
       </div>
     </div>
   ) : (
@@ -71,22 +121,25 @@ function MyProfile() {
 }
 
 export default function Home() {
-  const webId = useWebId()
+  const {profile} = useMyProfile()
+  const profileImage = profile && getUrl(profile, VCARD.hasPhoto)
+  const name = profile && getStringNoLocale(profile, FOAF.name)
 
   return (
     <div className="container">
       <Head>
-        <title>swrlit</title>
+        <title>swrlit time tracker</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
       <main className="m-6">
-        {webId && (
-          <MyProfile />
-        )}
-        <nav className="mt-12">
+        <div className="flex">
+          <img className="h-12 my-6" src={profileImage} alt={name} />
+          <h1 className="text-xl mr-6">hi, {name}</h1>
           <AuthButton />
-        </nav>
+        </div>
+
+        <TimeTrackers />
       </main>
       <footer>
       </footer>

@@ -1,5 +1,5 @@
 {
-  "name": "swrlit-example",
+  "name": "swrlit-timetracking",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,13 +9,14 @@
   },
   "dependencies": {
     "@inrupt/vocab-common-rdf": "^0.5.5",
+    "@inrupt/vocab-solid-common": "^0.5.5",
     "@itme/solid-client": "0.1.0-1",
     "next": "9.4.4",
     "postcss-flexbugs-fixes": "^4.2.1",
     "postcss-preset-env": "^6.7.0",
     "react": "^16.13.1",
     "react-dom": "16.13.1",
-    "swrlit": "0.0.10",
+    "swrlit": "0.0.11",
     "tailwindcss": "^1.6.2"
   }
 }
