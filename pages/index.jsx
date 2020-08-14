@@ -223,12 +223,12 @@ export default function Home() {
 
       <main className="m-6">
         <div className="flex items-center my-6">
-          <img className="h-12 my-6" src={profileImage} alt={name} />
-          <h1 className="text-xl mr-6">hi, {name}</h1>
+          {profile && <img className="h-12 my-6" src={profileImage} alt={name} />}
+          {profile && <h1 className="text-xl mr-6">hi, {name}</h1>}
           <AuthButton />
         </div>
 
-        <TimeTrackers />
+        {profile && <TimeTrackers />}
       </main>
       <footer>
       </footer>
