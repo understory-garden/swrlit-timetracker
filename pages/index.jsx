@@ -11,10 +11,14 @@ import {
   createSolidDataset, saveSolidDatasetInContainer,
   setThing, createThing, asUrl,
   getUrl, getUrlAll, addUrl,
-  getStringNoLocale, setStringNoLocale
+  getStringNoLocale, setStringNoLocale,
+  getDatetime, setDatetime
 } from '@itme/solid-client'
 import { VCARD, FOAF, RDF, RDFS } from '@inrupt/vocab-common-rdf'
 import { WS } from '@inrupt/vocab-solid-common'
+import { schema } from 'rdf-namespaces';
+import DateTimePicker from 'react-datetime';
+import moment from 'moment'
 
 export function AuthButton() {
   const { popupLogin, logout } = useAuthentication()
@@ -56,9 +60,25 @@ const TIMELOG = {
 function Entry({ entryUri }){
   const { thing: entry, save } = useThing(entryUri)
   const description = getStringNoLocale(entry, RDFS.comment)
+  const start = getDatetime(entry, schema.startTime)
+  const end = getDatetime(entry, schema.endTime)
+  const startMoment = start && moment(start)
+  const endMoment = end && moment(end)
   return (
-    <div>
-      {description}
+    <div className="my-6">
+      <div className="text-lg">
+        {description}
+      </div>
+      <div className="flex flex-row">
+        <div>
+          {startMoment && startMoment.format("MMMM Do, YYYY, h:mm:ss a")}
+        </div>
+        {startMoment && endMoment && (
+          <div className="mx-6">
+            {endMoment.diff(startMoment, 'minutes')} minutes
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -68,27 +88,51 @@ function Timelog({ log }){
   const { thing: timelog, save, resource, saveResource } = useThing(`${asUrl(log)}#log`)
   const name = timelog && getStringNoLocale(timelog, RDFS.label)
   const entries = timelog && getUrlAll(timelog, TIMELOG.entries)
+  const [description, setDescription] = useState("")
+  const [start, setStart] = useState(moment())
+  const [end, setEnd] = useState(moment())
 
-  const createEntry = async (description, start, end) => {
+  const createEntry = async () => {
     var entry = createThing();
     entry = addUrl(entry, RDF.type, TIMELOG.Entry)
     entry = setStringNoLocale(entry, RDFS.comment, description)
+    entry = setDatetime(entry, schema.startTime, start.toDate())
+    entry = setDatetime(entry, schema.endTime, end.toDate())
 
     var newTimelog = addUrl(timelog, TIMELOG.entries, entry)
     var newResource = setThing(resource, newTimelog)
     newResource = setThing(newResource, entry)
     await saveResource(newResource)
+    setDescription("")
   }
 
   return (
-    <div key={url}>
-      <h1><a href={url} target="_blank">{name}</a></h1>
-      <button className="btn btn-blue" onClick={() => createEntry("I did some werk")}>
-        Add Entry
-      </button>
+    <div>
+      <h1 className="text-xl mb-6">
+        <a href={url} target="_blank">{name}</a>
+      </h1>
+      <div className="flex">
+        <DateTimePicker
+          onChange={setStart}
+          value={start}
+          />
+        <DateTimePicker
+          onChange={setEnd}
+          value={end}
+          />
+        <input type="text" value={description} onChange={e => setDescription(e.target.value)} placeholder="description"/>
+
+        <button className="btn btn-blue" onClick={() => createEntry()}>
+          Add Entry
+        </button>
+      </div>
       {entries && entries.map(entry => <Entry key={entry} entryUri={entry}/>)}
     </div>
   )
+}
+
+function ttlFiles(resource) {
+  return asUrl(resource).endsWith(".ttl")
 }
 
 function TimeTrackers() {
@@ -109,10 +153,10 @@ function TimeTrackers() {
   }
 
   return timelogs ? (
-    <div>
-      <button className="btn btn-blue" onClick={createTimelog}>Create New Tracker</button>
+    <div className="my-6">
+      <button className="btn btn-blue mb-6" onClick={createTimelog}>Create New Tracker</button>
       <div className="flex">
-        {timelogs && timelogs.map(log => <Timelog key={asUrl(log)} log={log}/>)}
+        {timelogs && timelogs.filter(ttlFiles).map(log => <Timelog key={asUrl(log)} log={log}/>)}
       </div>
     </div>
   ) : (
@@ -133,7 +177,7 @@ export default function Home() {
       </Head>
 
       <main className="m-6">
-        <div className="flex">
+        <div className="flex items-center my-6">
           <img className="h-12 my-6" src={profileImage} alt={name} />
           <h1 className="text-xl mr-6">hi, {name}</h1>
           <AuthButton />
